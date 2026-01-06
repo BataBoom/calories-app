@@ -8,8 +8,15 @@
         "framework"
     ],
     "license": "MIT",
+    "repositories": [
+        {
+            "type": "vcs",
+            "url": "https://github.com/BataBoom/APINinja"
+        }
+    ],
     "require": {
         "php": "^8.2",
+        "bataboom/apininja": "dev-main",
         "inertiajs/inertia-laravel": "^2.0",
         "laravel/framework": "^12.0",
         "laravel/tinker": "^2.10.1",

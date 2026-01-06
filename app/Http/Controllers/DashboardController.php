@@ -7,6 +7,7 @@ use App\Models\Tdee;
 use App\Models\Food;
 use App\Models\Meal;
 use App\Services\FoodService;
+use BataBoom\APINinja\APINinja;
 
 class DashboardController extends Controller
 {
@@ -33,6 +34,7 @@ class DashboardController extends Controller
 
     public function search(Request $request)
     {
+        /*
         $foods = Food::search($request->q)
             ->limit(10)
             ->get()
@@ -50,9 +52,33 @@ class DashboardController extends Controller
                     ]
                 ];
             });
+        */
+
+            $foods = new APINinja;
+            $items = $foods->get(query: ['query' => $request->q]);
+
+            if($items['success'] === true) {
+                foreach($items['data'] as $food) {
+		    $food = (object) $food;
+                    $meal[] = [
+                        //'id' => $food->id,
+                        'text' => "{$food->name} ({$food->calories} cal)",
+                        'slug' => $food->name,
+                        'name' => $food->name,
+                    'data' => [
+                        'protein' => $food->protein_g,
+                        'fat' => $food->fat_total_g,
+                        'carbs' => $food->carbohydrates_total_g,
+                        'calories' => $food->calories,
+                    ]];
+                }
+            } else {
+                $meal = [];
+            }
+
 
         return response()->json([
-            'results' => $foods,
+            'results' => $meal,
         ]);
     }
 
@@ -60,7 +86,7 @@ class DashboardController extends Controller
     {
         $validatedData = $request->validate([
             'food' => 'required|array',
-            'food.id' => 'required|integer|exists:foods,id',
+            'food.id' => 'nullable|integer',
             'food.text' => 'required|string|max:255',
             'food.slug' => 'required|string|max:255',
             'food.name' => 'required|string|max:255',
