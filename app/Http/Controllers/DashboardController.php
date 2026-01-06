@@ -22,7 +22,7 @@ class DashboardController extends Controller
     {
         $dailyGoals = $this->foodService->dailyGoals();
         $meals = Meal::where('user_id', $request->user()->id)
-            ->whereDate('date', now())
+            ->whereDate('date', '<=', now()->addHours(24))
             ->orderBy('meal')
             ->get();
 
@@ -63,7 +63,7 @@ class DashboardController extends Controller
                     $meal[] = [
                         //'id' => $food->id,
                         'text' => "{$food->name} ({$food->calories} cal)",
-                        'slug' => $food->name,
+                        //'slug' => $food->name,
                         'name' => $food->name,
                     'data' => [
                         'protein' => $food->protein_g,
@@ -88,7 +88,7 @@ class DashboardController extends Controller
             'food' => 'required|array',
             'food.id' => 'nullable|integer',
             'food.text' => 'required|string|max:255',
-            'food.slug' => 'required|string|max:255',
+            'food.slug' => 'nullable|string|max:255',
             'food.name' => 'required|string|max:255',
             'food.data' => 'required|array',
             'food.data.protein' => 'required|numeric',
@@ -100,6 +100,14 @@ class DashboardController extends Controller
             'date' => 'nullable|date|before_or_equal:today',
         ]);
 
+	$food = Food::Create([
+	'name' => $validatedData['food']['name'],
+	'protein_per_100g' => $validatedData['food']['data']['protein'] * ($validatedData['weight'] / 100),
+	'fat_per_100g' => $validatedData['food']['data']['carbs'] * ($validatedData['weight'] / 100),
+	'carbs_per_100g' => $validatedData['food']['data']['carbs'] * ($validatedData['weight'] / 100),
+	'calories_per_100g' => $validatedData['food']['data']['calories'] * ($validatedData['weight'] / 100),
+	]);
+
         $storeData = [
             'name' => $validatedData['food']['name'],
             'meal' => $validatedData['meal'],
@@ -109,10 +117,11 @@ class DashboardController extends Controller
             'protein' => $validatedData['food']['data']['protein'] * ($validatedData['weight'] / 100),
             'fat' => $validatedData['food']['data']['fat'] * ($validatedData['weight'] / 100),
             'carbs' => $validatedData['food']['data']['carbs'] * ($validatedData['weight'] / 100),
-            'food_id' => $validatedData['food']['id'],
+            'food_id' => $food->id,
             'user_id' => $request->user()->id,
         ];
-
+	
+	
         Meal::create($storeData);
 
         return redirect()->route('dashboard');
@@ -123,7 +132,7 @@ class DashboardController extends Controller
         $validatedData = $request->validate([
             'id' => 'required|integer|exists:meals,id',
         ]);
-
+	
         Meal::where('id', $validatedData['id'])
             ->where('user_id', $request->user()->id)
             ->delete();
